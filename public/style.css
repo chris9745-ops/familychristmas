@@ -71,11 +71,11 @@ body{
   position: absolute;
   top: -5vh;
   left: var(--x, 10%);
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: rgba(255,255,255,.85);
-  box-shadow: 0 0 3px rgba(255,255,255,.6);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(91,97,85,.35), 0 0 5px rgba(255,255,255,.9);
   animation: fall linear infinite;
 }
 .snow span:nth-child(1){ --x: 6%;  animation-duration: 13s; animation-delay: 0s; }
@@ -190,11 +190,17 @@ body{
 .landing{
   min-height: 100vh;
   display:flex;
+  flex-direction: column;
   align-items:center;
   justify-content:center;
   padding: 40px 20px;
 }
 .landing[hidden]{ display:none; }
+.landing .lights{
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto 26px;
+}
 .landing-inner{
   max-width: 420px;
   width: 100%;
@@ -288,12 +294,18 @@ body{
 .lock{
   min-height: 100vh;
   display:flex;
+  flex-direction: column;
   align-items:center;
   justify-content:center;
   padding: 24px;
 }
 .lock[hidden]{
   display: none;
+}
+.lock .lights{
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto 22px;
 }
 #lock-back{
   margin-bottom: 6px;
