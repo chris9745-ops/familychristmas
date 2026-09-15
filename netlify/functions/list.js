@@ -170,6 +170,28 @@ exports.handler = async (event) => {
     return json(200, { ok: true, person: newPerson });
   }
 
+  // Bulk-add items parsed from an uploaded spreadsheet template, all in one save.
+  if (action === 'bulkAdd') {
+    const person = data.people.find(p => p.id === body.personId);
+    if (!person) return json(404, { error: 'No such list.' });
+    const incoming = Array.isArray(body.items) ? body.items.slice(0, 200) : [];
+    const created = incoming
+      .map(row => ({
+        id: newId(),
+        item: clean(row.item, 300),
+        purchaser: '',
+        purchased: false,
+        holiday: 'Either',
+        link: clean(row.link, 500),
+        notes: clean(row.notes, 500)
+      }))
+      .filter(row => row.item);
+    if (!created.length) return json(400, { error: 'No valid rows to import.' });
+    person.items.push(...created);
+    await saveData(store, data);
+    return json(200, { ok: true, items: created });
+  }
+
   if (action === 'removePerson') {
     data.people = data.people.filter(p => p.id !== body.personId);
     await saveData(store, data);

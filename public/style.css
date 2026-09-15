@@ -220,6 +220,79 @@ body{
   margin-top: 5px;
 }
 
+/* ---------- Import ---------- */
+.import-intro{
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 4px 0 22px;
+}
+.import-intro a{
+  color: var(--brass);
+  font-weight: 600;
+}
+.import-form{
+  display:flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.import-form select, .import-form input[type="file"]{
+  font-family: "Public Sans", sans-serif;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+}
+.import-form button{
+  margin-top: 18px;
+  background: var(--sage);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 14px;
+  align-self: flex-start;
+}
+.import-form button:hover{ background: #5C6650; }
+.import-feedback{
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: var(--cranberry-deep);
+}
+.import-feedback.is-success{ color: var(--sage); }
+.import-preview{
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+.import-preview h3{
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.import-preview .row{ align-items: flex-start; }
+.import-preview-item{ font-weight: 600; }
+.import-preview-meta{ font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+#import-confirm-btn{
+  margin-top: 16px;
+  background: var(--cranberry);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 14px;
+}
+#import-confirm-btn:hover{ background: var(--cranberry-deep); }
+
 /* ---------- Landing (public quick-add + countdown) ---------- */
 .landing{
   min-height: 100vh;

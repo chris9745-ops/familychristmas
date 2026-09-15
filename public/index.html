@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -152,6 +153,34 @@
           </div>
 
           <div id="overview-rows" class="rows overview-rows"></div>
+        </div>
+
+        <div id="import-view" hidden>
+          <div class="sheet-head">
+            <h2>📥 Import a filled-out list</h2>
+          </div>
+          <p class="import-intro">
+            Send the template to whoever's filling out their list, then bring it back here.
+            <a id="template-link" href="template.xlsx" download>Download the blank template</a>
+          </p>
+
+          <div class="import-form">
+            <label class="field-label" for="import-person">Whose list is this for?</label>
+            <select id="import-person"></select>
+
+            <label class="field-label" for="import-file">Filled-out spreadsheet (.xlsx or .csv)</label>
+            <input id="import-file" type="file" accept=".xlsx,.xls,.csv">
+
+            <button id="import-preview-btn" type="button">Preview import</button>
+          </div>
+
+          <div id="import-feedback" class="import-feedback" hidden></div>
+
+          <div id="import-preview" class="import-preview" hidden>
+            <h3 id="import-preview-title"></h3>
+            <div id="import-preview-rows" class="rows"></div>
+            <button id="import-confirm-btn" type="button">Add these to the list</button>
+          </div>
         </div>
       </main>
     </div>

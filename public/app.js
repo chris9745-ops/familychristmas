@@ -211,6 +211,16 @@
       renderSheet();
     });
     tabsEl.appendChild(overviewBtn);
+
+    const importBtn = document.createElement('button');
+    importBtn.className = 'tab tab-overview' + (viewMode === 'import' ? ' is-active' : '');
+    importBtn.textContent = '📥 Import';
+    importBtn.addEventListener('click', () => {
+      viewMode = 'import';
+      renderTabs();
+      renderSheet();
+    });
+    tabsEl.appendChild(importBtn);
     tabsEl.appendChild(document.createElement('hr')).className = 'tabs-divider';
 
     state.people.forEach(person => {
@@ -254,14 +264,19 @@
   function renderSheet() {
     const personView = $('#person-view');
     const overviewView = $('#overview-view');
+    const importView = $('#import-view');
+    personView.hidden = viewMode !== 'person';
+    overviewView.hidden = viewMode !== 'overview';
+    importView.hidden = viewMode !== 'import';
+
     if (viewMode === 'overview') {
-      personView.hidden = true;
-      overviewView.hidden = false;
       renderOverview();
       return;
     }
-    personView.hidden = false;
-    overviewView.hidden = true;
+    if (viewMode === 'import') {
+      populateImportPersonSelect();
+      return;
+    }
     const person = currentPerson();
     if (!person) {
       $('#sheet-title').textContent = 'No lists yet';
@@ -411,6 +426,117 @@
   $('#ov-search').addEventListener('input', (e) => {
     overviewFilters.search = e.target.value;
     renderOverview();
+  });
+
+  // ---------- Import from spreadsheet ----------
+  let parsedImportRows = [];
+
+  function populateImportPersonSelect() {
+    const select = $('#import-person');
+    const prev = select.value;
+    select.innerHTML = '';
+    state.people.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      select.appendChild(opt);
+    });
+    if (state.people.some(p => p.id === prev)) select.value = prev;
+  }
+
+  function showImportFeedback(text, isError) {
+    const el = $('#import-feedback');
+    el.textContent = text;
+    el.hidden = false;
+    el.classList.toggle('is-success', !isError);
+  }
+
+  function parseWorkbookRows(workbook) {
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+
+    // Find the header row (the one with "item" as its first cell) so the
+    // instruction banner row in the template doesn't get treated as data.
+    let headerIdx = rows.findIndex(r => String(r[0] || '').trim().toLowerCase() === 'item');
+    if (headerIdx === -1) headerIdx = 0;
+
+    return rows
+      .slice(headerIdx + 1)
+      .map(r => ({
+        item: String(r[0] || '').trim(),
+        link: String(r[1] || '').trim(),
+        notes: String(r[2] || '').trim()
+      }))
+      .filter(r => r.item);
+  }
+
+  $('#import-preview-btn').addEventListener('click', () => {
+    const fileInput = $('#import-file');
+    const feedback = $('#import-feedback');
+    feedback.hidden = true;
+    $('#import-preview').hidden = true;
+
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      showImportFeedback('Choose a filled-out spreadsheet first.', true);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const workbook = XLSX.read(e.target.result, { type: 'array' });
+        parsedImportRows = parseWorkbookRows(workbook);
+        if (!parsedImportRows.length) {
+          showImportFeedback("Couldn't find any filled-in rows — check the file and try again.", true);
+          return;
+        }
+        renderImportPreview();
+      } catch (err) {
+        showImportFeedback("Couldn't read that file — make sure it's the template .xlsx or .csv.", true);
+      }
+    };
+    reader.onerror = () => showImportFeedback("Couldn't read that file.", true);
+    reader.readAsArrayBuffer(file);
+  });
+
+  function renderImportPreview() {
+    const personName = $('#import-person option:checked') ? $('#import-person option:checked').textContent : '';
+    $('#import-preview-title').textContent = `${parsedImportRows.length} item${parsedImportRows.length === 1 ? '' : 's'} ready to add to ${personName}'s list`;
+    const rowsEl = $('#import-preview-rows');
+    rowsEl.innerHTML = '';
+    parsedImportRows.forEach(row => {
+      const div = document.createElement('div');
+      div.className = 'row';
+      div.innerHTML = `
+        <div class="row-main">
+          <div class="import-preview-item">${escapeHtml(row.item)}</div>
+          <div class="import-preview-meta">${[row.link, row.notes].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+        </div>
+      `;
+      rowsEl.appendChild(div);
+    });
+    $('#import-preview').hidden = false;
+  }
+
+  $('#import-confirm-btn').addEventListener('click', async () => {
+    const personId = $('#import-person').value;
+    if (!personId || !parsedImportRows.length) return;
+    try {
+      const data = await callApi('bulkAdd', { personId, items: parsedImportRows });
+      if (data.ok) {
+        const person = state.people.find(p => p.id === personId);
+        if (person) person.items.push(...data.items);
+        showImportFeedback(`Added ${data.items.length} item${data.items.length === 1 ? '' : 's'}.`, false);
+        $('#import-preview').hidden = true;
+        $('#import-file').value = '';
+        parsedImportRows = [];
+        renderTabs();
+        flashSaved();
+      } else {
+        showImportFeedback(data.error || "Couldn't import — try again.", true);
+      }
+    } catch (err) { /* handled in callApi */ }
   });
 
   function renderRows(person) {
