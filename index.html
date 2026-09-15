@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The 2026 List</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎁</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Lock screen -->
+  <div id="lock" class="lock">
+    <div class="lock-card">
+      <p class="lock-eyebrow">The 2026 List</p>
+      <h1>What's the passcode?</h1>
+      <p class="lock-sub">Same one the whole family uses — ask in the group chat if you forgot it.</p>
+      <form id="lock-form" autocomplete="off">
+        <input id="pin-input" type="password" inputmode="numeric" placeholder="••••" maxlength="12" autofocus>
+        <button type="submit">Open the list</button>
+      </form>
+      <p id="lock-error" class="lock-error" hidden>That's not it — try again.</p>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="app" hidden>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Christmas &amp; December Birthdays</p>
+        <h1>The 2026 List</h1>
+      </div>
+      <div class="masthead-actions">
+        <span id="save-indicator" class="save-indicator"></span>
+        <button id="lock-btn" class="ghost-btn" title="Lock this device">Lock</button>
+      </div>
+    </header>
+
+    <div class="board">
+      <nav id="tabs" class="tabs" aria-label="Family members"></nav>
+
+      <main class="sheet">
+        <div class="sheet-head">
+          <h2 id="sheet-title">—</h2>
+          <button id="remove-person" class="text-btn danger">Remove this list</button>
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-chip is-active" data-filter="all">Everything</button>
+          <button class="filter-chip" data-filter="open">Still to buy</button>
+          <button class="filter-chip" data-filter="done">Already bought</button>
+        </div>
+
+        <div id="rows" class="rows"></div>
+
+        <form id="add-form" class="add-row" autocomplete="off">
+          <input id="add-item" type="text" placeholder="Add something to the list…" required>
+          <button type="submit">Add</button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <template id="row-template">
+    <div class="row">
+      <input type="checkbox" class="row-check" title="Mark as purchased">
+      <div class="row-main">
+        <input type="text" class="row-item" placeholder="Item">
+        <div class="row-meta">
+          <input type="text" class="row-purchaser" list="purchaser-suggestions" placeholder="Who's getting it? (name, or leave blank)">
+          <select class="row-holiday">
+            <option value="Either">Either</option>
+            <option value="Christmas">Christmas</option>
+            <option value="Birthday">Birthday</option>
+          </select>
+          <input type="url" class="row-link" placeholder="Link (optional)">
+        </div>
+      </div>
+      <a class="row-open" target="_blank" rel="noopener" title="Open link">↗</a>
+      <button class="row-delete" title="Remove item">×</button>
+    </div>
+  </template>
+
+  <datalist id="purchaser-suggestions"></datalist>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
