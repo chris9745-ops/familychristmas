@@ -14,6 +14,9 @@
 
   <!-- Public landing: quick-add + countdown gateway to login -->
   <div id="landing" class="landing">
+    <div class="lights" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
     <div class="landing-inner">
       <p class="lock-eyebrow">The 2026 List</p>
       <h1 class="landing-title">Add something to your list</h1>
@@ -63,13 +66,18 @@
   <!-- Authenticated app -->
   <div id="app" class="app" hidden>
     <header class="masthead">
-      <div>
-        <p class="eyebrow">Christmas &amp; December Birthdays</p>
-        <h1>The 2026 List</h1>
+      <div class="lights" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
-      <div class="masthead-actions">
-        <span id="save-indicator" class="save-indicator"></span>
-        <button id="lock-btn" class="ghost-btn" title="Lock this device">Lock</button>
+      <div class="masthead-row">
+        <div>
+          <p class="eyebrow">🎄 Christmas &amp; December Birthdays</p>
+          <h1>The 2026 List</h1>
+        </div>
+        <div class="masthead-actions">
+          <span id="save-indicator" class="save-indicator"></span>
+          <button id="lock-btn" class="ghost-btn" title="Lock this device">Lock</button>
+        </div>
       </div>
     </header>
 
@@ -77,27 +85,66 @@
       <nav id="tabs" class="tabs" aria-label="Family members"></nav>
 
       <main class="sheet">
-        <div class="sheet-head">
-          <h2 id="sheet-title">—</h2>
-          <button id="remove-person" class="text-btn danger">Remove this list</button>
-        </div>
-
-        <div class="filter-row">
-          <button class="filter-chip is-active" data-filter="all">Everything</button>
-          <button class="filter-chip" data-filter="open">Still to buy</button>
-          <button class="filter-chip" data-filter="done">Already bought</button>
-        </div>
-
-        <div id="rows" class="rows"></div>
-
-        <form id="add-form" class="add-row" autocomplete="off">
-          <div class="add-row-fields">
-            <input id="add-item" type="text" placeholder="Add something to the list…" required>
-            <input id="add-link" type="url" placeholder="Link (optional)">
-            <input id="add-notes" type="text" placeholder="Notes (optional)">
+        <div id="person-view">
+          <div class="sheet-head">
+            <h2 id="sheet-title">—</h2>
+            <button id="remove-person" class="text-btn danger">Remove this list</button>
           </div>
-          <button type="submit">Add</button>
-        </form>
+
+          <div class="filter-row">
+            <button class="filter-chip is-active" data-filter="all">Everything</button>
+            <button class="filter-chip" data-filter="open">Still to buy</button>
+            <button class="filter-chip" data-filter="done">Already bought</button>
+          </div>
+
+          <div id="rows" class="rows"></div>
+
+          <form id="add-form" class="add-row" autocomplete="off">
+            <div class="add-row-fields">
+              <input id="add-item" type="text" placeholder="Add something to the list…" required>
+              <input id="add-link" type="url" placeholder="Link (optional)">
+              <input id="add-notes" type="text" placeholder="Notes (optional)">
+            </div>
+            <button type="submit">Add</button>
+          </form>
+        </div>
+
+        <div id="overview-view" hidden>
+          <div class="sheet-head">
+            <h2>🎄 Family overview</h2>
+          </div>
+
+          <div id="stat-row" class="stat-row"></div>
+          <div id="progress-list" class="progress-list"></div>
+
+          <div class="overview-filters">
+            <select id="ov-person"><option value="all">Everyone's lists</option></select>
+            <select id="ov-purchaser">
+              <option value="all">Any purchaser</option>
+              <option value="">Unassigned</option>
+              <option value="Sharon">Sharon</option>
+              <option value="KJ">KJ</option>
+              <option value="Hollie">Hollie</option>
+              <option value="Jody">Jody</option>
+              <option value="Chris">Chris</option>
+              <option value="Jill">Jill</option>
+            </select>
+            <select id="ov-holiday">
+              <option value="all">Christmas &amp; birthdays</option>
+              <option value="Christmas">Christmas</option>
+              <option value="Birthday">Birthday</option>
+              <option value="Either">Either</option>
+            </select>
+            <select id="ov-status">
+              <option value="all">Bought &amp; unbought</option>
+              <option value="open">Still to buy</option>
+              <option value="done">Already bought</option>
+            </select>
+            <input id="ov-search" type="text" placeholder="Search items…">
+          </div>
+
+          <div id="overview-rows" class="rows overview-rows"></div>
+        </div>
       </main>
     </div>
   </div>
@@ -132,6 +179,11 @@
   </template>
 
   <div id="toast" class="toast" hidden></div>
+
+  <div class="snow" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
 
   <script src="app.js"></script>
 </body>

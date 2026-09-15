@@ -4,7 +4,9 @@
 
   let state = { people: [] };
   let activePersonId = null;
+  let viewMode = 'person'; // 'person' | 'overview'
   let activeFilter = 'all';
+  const overviewFilters = { person: 'all', purchaser: 'all', holiday: 'all', status: 'all', search: '' };
   const saveTimers = {}; // debounce timers per-field, keyed by "personId:itemId:field"
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -199,12 +201,25 @@
   function renderTabs() {
     const tabsEl = $('#tabs');
     tabsEl.innerHTML = '';
+
+    const overviewBtn = document.createElement('button');
+    overviewBtn.className = 'tab tab-overview' + (viewMode === 'overview' ? ' is-active' : '');
+    overviewBtn.textContent = '📊 Overview';
+    overviewBtn.addEventListener('click', () => {
+      viewMode = 'overview';
+      renderTabs();
+      renderSheet();
+    });
+    tabsEl.appendChild(overviewBtn);
+    tabsEl.appendChild(document.createElement('hr')).className = 'tabs-divider';
+
     state.people.forEach(person => {
       const btn = document.createElement('button');
-      btn.className = 'tab' + (person.id === activePersonId ? ' is-active' : '');
+      btn.className = 'tab' + (viewMode === 'person' && person.id === activePersonId ? ' is-active' : '');
       const openCount = person.items.filter(i => !i.purchased).length;
       btn.innerHTML = `${escapeHtml(person.name)}<span class="tab-count">${openCount}</span>`;
       btn.addEventListener('click', () => {
+        viewMode = 'person';
         activePersonId = person.id;
         activeFilter = 'all';
         $$('.filter-chip').forEach(c => c.classList.toggle('is-active', c.dataset.filter === 'all'));
@@ -223,6 +238,7 @@
         const data = await callApi('addPerson', { name: name.trim() });
         if (data.ok) {
           state.people.push(data.person);
+          viewMode = 'person';
           activePersonId = data.person.id;
           activeFilter = 'all';
           renderTabs();
@@ -236,6 +252,16 @@
 
   // ---------- Sheet ----------
   function renderSheet() {
+    const personView = $('#person-view');
+    const overviewView = $('#overview-view');
+    if (viewMode === 'overview') {
+      personView.hidden = true;
+      overviewView.hidden = false;
+      renderOverview();
+      return;
+    }
+    personView.hidden = false;
+    overviewView.hidden = true;
     const person = currentPerson();
     if (!person) {
       $('#sheet-title').textContent = 'No lists yet';
@@ -245,6 +271,147 @@
     $('#sheet-title').textContent = person.name;
     renderRows(person);
   }
+
+  // ---------- Overview dashboard ----------
+  function populateOverviewPersonFilter() {
+    const select = $('#ov-person');
+    const prev = select.value || 'all';
+    select.innerHTML = '<option value="all">Everyone\'s lists</option>';
+    state.people.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      select.appendChild(opt);
+    });
+    select.value = state.people.some(p => p.id === prev) ? prev : 'all';
+  }
+
+  function renderOverview() {
+    populateOverviewPersonFilter();
+
+    let allItems = [];
+    state.people.forEach(person => {
+      person.items.forEach(item => allItems.push({ person, item }));
+    });
+
+    const totalItems = allItems.length;
+    const purchasedCount = allItems.filter(x => x.item.purchased).length;
+    const openCount = totalItems - purchasedCount;
+
+    $('#stat-row').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${totalItems}</div><div class="stat-label">Total wishes</div></div>
+      <div class="stat-card"><div class="stat-num">${openCount}</div><div class="stat-label">Still to buy</div></div>
+      <div class="stat-card"><div class="stat-num">${purchasedCount}</div><div class="stat-label">Already bought</div></div>
+      <div class="stat-card"><div class="stat-num">${state.people.length}</div><div class="stat-label">Lists</div></div>
+    `;
+
+    const progressList = $('#progress-list');
+    progressList.innerHTML = '';
+    state.people.forEach(person => {
+      const total = person.items.length;
+      const done = person.items.filter(i => i.purchased).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const row = document.createElement('div');
+      row.className = 'progress-item';
+      row.innerHTML = `
+        <span class="progress-name">${escapeHtml(person.name)}</span>
+        <span class="progress-track"><span class="progress-fill" style="width:${pct}%"></span></span>
+        <span class="progress-count">${done}/${total}</span>
+      `;
+      progressList.appendChild(row);
+    });
+
+    // Apply filters
+    let filtered = allItems.filter(({ person, item }) => {
+      if (overviewFilters.person !== 'all' && person.id !== overviewFilters.person) return false;
+      if (overviewFilters.purchaser !== 'all' && (item.purchaser || '') !== overviewFilters.purchaser) return false;
+      if (overviewFilters.holiday !== 'all' && (item.holiday || 'Either') !== overviewFilters.holiday) return false;
+      if (overviewFilters.status === 'open' && item.purchased) return false;
+      if (overviewFilters.status === 'done' && !item.purchased) return false;
+      if (overviewFilters.search && !(item.item || '').toLowerCase().includes(overviewFilters.search.toLowerCase())) return false;
+      return true;
+    });
+
+    const rowsEl = $('#overview-rows');
+    rowsEl.innerHTML = '';
+    if (!filtered.length) {
+      rowsEl.innerHTML = '<p class="empty-note">Nothing matches these filters.</p>';
+      return;
+    }
+
+    const template = $('#row-template');
+    filtered.forEach(({ person, item }) => {
+      const node = template.content.cloneNode(true);
+      const row = $('.row', node);
+      row.dataset.id = item.id;
+      if (item.purchased) row.classList.add('is-done');
+
+      const personTag = document.createElement('span');
+      personTag.className = 'row-person';
+      personTag.textContent = person.name;
+      row.insertBefore(personTag, row.firstChild);
+
+      function patch(fields) {
+        Object.assign(item, fields);
+        const key = `${person.id}:${item.id}:${Object.keys(fields)[0]}`;
+        debouncedSave(key, async () => {
+          try {
+            await callApi('updateItem', { personId: person.id, itemId: item.id, patch: fields });
+            flashSaved();
+          } catch (err) { /* handled in callApi */ }
+        });
+      }
+
+      const check = $('.row-check', node);
+      check.checked = !!item.purchased;
+      check.addEventListener('change', () => {
+        patch({ purchased: check.checked });
+        renderTabs();
+        renderOverview();
+      });
+
+      const itemInput = $('.row-item', node);
+      itemInput.value = item.item || '';
+      itemInput.readOnly = true; // overview is for triage, not renaming — edit from the person's own list
+
+      const purchaserSelect = $('.row-purchaser', node);
+      purchaserSelect.value = item.purchaser || '';
+      purchaserSelect.addEventListener('change', () => patch({ purchaser: purchaserSelect.value }));
+
+      const holidaySelect = $('.row-holiday', node);
+      holidaySelect.value = item.holiday || 'Either';
+      holidaySelect.addEventListener('change', () => patch({ holiday: holidaySelect.value }));
+
+      const linkInput = $('.row-link', node);
+      linkInput.value = item.link || '';
+      linkInput.readOnly = true;
+      const openLink = $('.row-open', node);
+      if (item.link) {
+        openLink.href = item.link;
+        openLink.classList.add('has-link');
+      }
+
+      const notesInput = $('.row-notes', node);
+      notesInput.value = item.notes || '';
+      notesInput.readOnly = true;
+
+      $('.row-delete', node).remove();
+
+      rowsEl.appendChild(node);
+    });
+  }
+
+  ['ov-person', 'ov-purchaser', 'ov-holiday', 'ov-status'].forEach(id => {
+    $('#' + id).addEventListener('change', (e) => {
+      const key = id.replace('ov-', '');
+      overviewFilters[key] = e.target.value;
+      renderOverview();
+    });
+  });
+  $('#ov-search').addEventListener('input', (e) => {
+    overviewFilters.search = e.target.value;
+    renderOverview();
+  });
 
   function renderRows(person) {
     const rowsEl = $('#rows');
