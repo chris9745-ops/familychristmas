@@ -4,7 +4,7 @@
 
   let state = { people: [] };
   let activePersonId = null;
-  let viewMode = 'person'; // 'person' | 'overview'
+  let viewMode = 'overview'; // 'person' | 'overview' — lands on Overview after login
   let activeFilter = 'all';
   const overviewFilters = { person: 'all', purchaser: 'all', holiday: 'all', status: 'all', search: '' };
   const saveTimers = {}; // debounce timers per-field, keyed by "personId:itemId:field"
