@@ -26,8 +26,18 @@ function json(statusCode, body) {
   };
 }
 
+function makeStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  // Fall back to explicit credentials if Netlify's automatic wiring isn't present.
+  if (siteID && token) {
+    return getStore({ name: STORE_NAME, siteID, token });
+  }
+  return getStore(STORE_NAME);
+}
+
 exports.handler = async (event) => {
-  const store = getStore(STORE_NAME);
+  const store = makeStore();
 
   if (event.httpMethod === 'OPTIONS') {
     return json(200, { ok: true });
