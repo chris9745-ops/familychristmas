@@ -11,6 +11,13 @@
   --sage-bg: #E7E9DC;
   --shadow: 0 1px 0 rgba(38,47,38,.06);
   --radius: 3px;
+
+  /* winter-night canvas, behind the cream cards */
+  --night: #16241B;
+  --night-2: #23392A;
+  --night-rule: rgba(242,239,224,.16);
+  --cream-text: #F2EFE0;
+  --cream-text-soft: #AEB89F;
 }
 
 *{ box-sizing: border-box; }
@@ -18,7 +25,7 @@
 html,body{
   margin:0;
   padding:0;
-  background: var(--paper);
+  background: var(--night);
   color: var(--ink);
   font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100vh;
@@ -30,11 +37,13 @@ h1,h2{
   margin: 0;
 }
 
-/* subtle paper texture via layered gradients, no external images */
+/* deep pine-forest backdrop, lit unevenly like moonlight through trees */
 body{
   background-image:
-    radial-gradient(circle at 15% 8%, rgba(38,47,38,.025) 0, transparent 40%),
-    radial-gradient(circle at 85% 92%, rgba(38,47,38,.025) 0, transparent 40%);
+    radial-gradient(ellipse 900px 500px at 18% -8%, rgba(58,94,68,.55) 0, transparent 60%),
+    radial-gradient(ellipse 700px 500px at 88% 105%, rgba(35,57,42,.6) 0, transparent 55%),
+    linear-gradient(180deg, #182A1E 0%, #101C15 100%);
+  background-attachment: fixed;
 }
 
 /* ---------- Festive touches ---------- */
@@ -91,6 +100,31 @@ body{
 @keyframes fall{
   to { transform: translateY(115vh) translateX(12px); }
 }
+
+/* Pine treeline along the bottom of every screen */
+.treeline{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.treeline-back{
+  height: 110px;
+  background: var(--night-2);
+  opacity: .6;
+  clip-path: polygon(0 100%, 4% 55%, 8% 100%, 12% 40%, 16% 100%, 20% 60%, 24% 100%, 28% 35%, 32% 100%, 36% 65%, 40% 100%, 44% 45%, 48% 100%, 52% 60%, 56% 100%, 60% 30%, 64% 100%, 68% 55%, 72% 100%, 76% 40%, 80% 100%, 84% 65%, 88% 100%, 92% 45%, 96% 100%, 100% 55%, 100% 100%);
+}
+.treeline-front{
+  height: 78px;
+  background: #0E1A12;
+  opacity: .85;
+  clip-path: polygon(0 100%, 6% 45%, 12% 100%, 18% 30%, 24% 100%, 30% 50%, 36% 100%, 42% 25%, 48% 100%, 54% 55%, 60% 100%, 66% 35%, 72% 100%, 78% 45%, 84% 100%, 90% 30%, 96% 100%, 100% 50%, 100% 100%);
+}
+.landing, .lock, .app{ position: relative; z-index: 2; }
+
 @media (prefers-reduced-motion: reduce){
   .snow{ display:none; }
   .lights span{ animation: none; opacity: .85; }
@@ -205,6 +239,9 @@ body{
   max-width: 420px;
   width: 100%;
 }
+.landing-hero{ text-align: left; }
+.landing-hero h1{ color: var(--cream-text); }
+.landing-hero .lock-sub{ color: var(--cream-text-soft); }
 .landing-title{
   font-size: 30px;
   margin: 4px 0 10px;
@@ -217,7 +254,7 @@ body{
   display:flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 34px rgba(0,0,0,.35);
 }
 .field-label{
   font-size: 12.5px;
@@ -256,9 +293,9 @@ body{
 .countdown-card{
   width: 100%;
   margin-top: 30px;
-  background: var(--ink);
+  background: var(--night);
   color: var(--paper);
-  border: none;
+  border: 1px solid var(--brass);
   border-radius: var(--radius);
   padding: 22px 20px;
   display:flex;
@@ -266,8 +303,9 @@ body{
   align-items:center;
   gap: 2px;
   cursor: pointer;
+  box-shadow: 0 14px 34px rgba(0,0,0,.4);
 }
-.countdown-card:hover{ background: #1B221B; }
+.countdown-card:hover{ background: #1B2E20; }
 .countdown-eyebrow{
   font-size: 13px;
   color: var(--brass);
@@ -318,7 +356,7 @@ body{
   border-radius: var(--radius);
   padding: 36px 32px;
   text-align:left;
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 34px rgba(0,0,0,.35);
 }
 .lock-eyebrow{
   margin: 0 0 4px;
@@ -376,7 +414,7 @@ button{
 /* ---------- App shell ---------- */
 .masthead{
   padding: 20px clamp(16px, 4vw, 48px) 20px;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--night-rule);
 }
 .masthead-row{
   display:flex;
@@ -393,6 +431,7 @@ button{
 }
 .masthead h1{
   font-size: clamp(28px, 4vw, 38px);
+  color: var(--cream-text);
 }
 .masthead-actions{
   display:flex;
@@ -401,19 +440,19 @@ button{
 }
 .save-indicator{
   font-size: 12px;
-  color: var(--ink-soft);
+  color: var(--cream-text-soft);
   min-width: 70px;
   text-align: right;
 }
 .ghost-btn{
   background: transparent;
-  border: 1px solid var(--rule);
-  color: var(--ink-soft);
+  border: 1px solid var(--night-rule);
+  color: var(--cream-text-soft);
   padding: 7px 14px;
   border-radius: var(--radius);
   font-size: 13px;
 }
-.ghost-btn:hover{ border-color: var(--ink-soft); color: var(--ink); }
+.ghost-btn:hover{ border-color: var(--cream-text-soft); color: var(--cream-text); }
 
 .board{
   display:flex;
@@ -439,14 +478,14 @@ button{
   background: transparent;
   border: 1px solid transparent;
   border-right: none;
-  color: var(--ink-soft);
+  color: var(--cream-text-soft);
   font-family: "Fraunces", serif;
   font-size: 16px;
   padding: 10px 14px;
   border-radius: var(--radius) 0 0 var(--radius);
   cursor:pointer;
 }
-.tab:hover{ color: var(--ink); }
+.tab:hover{ color: var(--cream-text); }
 .tab.is-active{
   background: var(--paper-card);
   border-color: var(--rule);
@@ -467,20 +506,21 @@ button{
 }
 .tabs-divider{
   border: none;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--night-rule);
   margin: 6px 10px 8px 14px;
 }
 .tab-count{
   font-family: "Public Sans", sans-serif;
   font-size: 11px;
-  color: var(--ink-soft);
+  color: inherit;
+  opacity: .7;
   margin-left: 6px;
 }
 .add-tab{
   margin-top: 10px;
   text-align:left;
   background: none;
-  border: 1px dashed var(--rule);
+  border: 1px dashed var(--night-rule);
   color: var(--brass);
   font-size: 13px;
   padding: 9px 14px;
@@ -495,6 +535,7 @@ button{
   border: 1px solid var(--rule);
   border-radius: 0 var(--radius) var(--radius) var(--radius);
   padding: 26px clamp(16px, 3vw, 34px) 30px;
+  box-shadow: 0 20px 44px rgba(0,0,0,.3);
 }
 .sheet-head{
   display:flex;
@@ -670,12 +711,13 @@ button{
   bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--cranberry-deep);
+  color: #fff;
   font-size: 13px;
   padding: 9px 18px;
   border-radius: var(--radius);
-  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  z-index: 6;
 }
 
 @media (max-width: 720px){

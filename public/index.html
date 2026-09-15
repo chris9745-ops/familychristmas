@@ -12,15 +12,20 @@
 </head>
 <body>
 
+  <div class="treeline treeline-back" aria-hidden="true"></div>
+  <div class="treeline treeline-front" aria-hidden="true"></div>
+
   <!-- Public landing: quick-add + countdown gateway to login -->
   <div id="landing" class="landing">
     <div class="lights" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
     </div>
     <div class="landing-inner">
-      <p class="lock-eyebrow">The 2026 List</p>
-      <h1 class="landing-title">Add something to your list</h1>
-      <p class="lock-sub">Pick your name, say what you want, and drop in a link if you've got one. An adult will take it from here.</p>
+      <div class="landing-hero">
+        <p class="lock-eyebrow">The 2026 List</p>
+        <h1 class="landing-title">Add something to your list</h1>
+        <p class="lock-sub">Pick your name, say what you want, and drop in a link if you've got one. An adult will take it from here.</p>
+      </div>
 
       <form id="quickadd-form" class="quickadd-card" autocomplete="off">
         <label class="field-label" for="quick-person">Whose list?</label>
