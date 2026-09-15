@@ -37,6 +37,104 @@ body{
     radial-gradient(circle at 85% 92%, rgba(38,47,38,.025) 0, transparent 40%);
 }
 
+/* ---------- Landing (public quick-add + countdown) ---------- */
+.landing{
+  min-height: 100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 40px 20px;
+}
+.landing[hidden]{ display:none; }
+.landing-inner{
+  max-width: 420px;
+  width: 100%;
+}
+.landing-title{
+  font-size: 30px;
+  margin: 4px 0 10px;
+}
+.quickadd-card{
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 24px;
+  display:flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow);
+}
+.field-label{
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 12px 0 5px;
+}
+.field-label:first-child{ margin-top: 0; }
+.quickadd-card input, .quickadd-card select{
+  font-family: "Public Sans", sans-serif;
+  font-size: 14.5px;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+}
+.quickadd-card button{
+  margin-top: 18px;
+  background: var(--cranberry);
+  color: #fff;
+  border: none;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.quickadd-card button:hover{ background: var(--cranberry-deep); }
+.quickadd-msg{
+  text-align:center;
+  font-size: 13px;
+  color: var(--sage);
+  margin: 12px 0 0;
+}
+.quickadd-msg.is-error{ color: var(--cranberry-deep); }
+
+.countdown-card{
+  width: 100%;
+  margin-top: 30px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  gap: 2px;
+  cursor: pointer;
+}
+.countdown-card:hover{ background: #1B221B; }
+.countdown-eyebrow{
+  font-size: 13px;
+  color: var(--brass);
+  letter-spacing: .02em;
+}
+.countdown-days{
+  font-family: "Fraunces", serif;
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.countdown-clock{
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  color: #C9CEC2;
+  margin-bottom: 8px;
+}
+.countdown-hint{
+  font-size: 11.5px;
+  color: #8E958A;
+}
+
 /* ---------- Lock screen ---------- */
 .lock{
   min-height: 100vh;
@@ -47,6 +145,9 @@ body{
 }
 .lock[hidden]{
   display: none;
+}
+#lock-back{
+  margin-bottom: 6px;
 }
 .lock-card{
   max-width: 380px;
@@ -314,9 +415,19 @@ button{
   border-radius: var(--radius);
   padding: 4px 8px;
 }
-.row-purchaser{ width: 176px; max-width: 45%; }
+.row-purchaser{ width: 150px; }
 .row-holiday{ width: 96px; }
 .row-link{ flex:1; min-width: 110px; }
+.row-notes{
+  font-family: "Public Sans", sans-serif;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  width: 100%;
+}
 .row-open{
   margin-top: 6px;
   color: var(--brass);
@@ -347,11 +458,18 @@ button{
 
 .add-row{
   display:flex;
+  align-items:flex-start;
   gap: 10px;
   margin-top: 18px;
+  flex-wrap: wrap;
+}
+.add-row-fields{
+  flex: 1 1 320px;
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .add-row input{
-  flex:1;
   font-family: "Public Sans", sans-serif;
   font-size: 14px;
   padding: 10px 12px;
@@ -359,6 +477,8 @@ button{
   border-radius: var(--radius);
   background: #fff;
 }
+#add-item{ flex: 1 1 180px; }
+#add-link, #add-notes{ flex: 1 1 140px; }
 .add-row button{
   background: var(--sage);
   color: #fff;

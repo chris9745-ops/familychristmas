@@ -12,9 +12,43 @@
 </head>
 <body>
 
-  <!-- Lock screen -->
-  <div id="lock" class="lock">
+  <!-- Public landing: quick-add + countdown gateway to login -->
+  <div id="landing" class="landing">
+    <div class="landing-inner">
+      <p class="lock-eyebrow">The 2026 List</p>
+      <h1 class="landing-title">Add something to your list</h1>
+      <p class="lock-sub">Pick your name, say what you want, and drop in a link if you've got one. An adult will take it from here.</p>
+
+      <form id="quickadd-form" class="quickadd-card" autocomplete="off">
+        <label class="field-label" for="quick-person">Whose list?</label>
+        <select id="quick-person" required></select>
+
+        <label class="field-label" for="quick-item">What do you want?</label>
+        <input id="quick-item" type="text" placeholder="Be specific — size, color, version…" required>
+
+        <label class="field-label" for="quick-link">Link (optional)</label>
+        <input id="quick-link" type="url" placeholder="Paste a link if you found it somewhere">
+
+        <label class="field-label" for="quick-notes">Notes (optional)</label>
+        <input id="quick-notes" type="text" placeholder="Anything else to know?">
+
+        <button type="submit">Add to my list</button>
+      </form>
+      <p id="quickadd-msg" class="quickadd-msg" hidden></p>
+
+      <button id="countdown-widget" class="countdown-card" type="button">
+        <span class="countdown-eyebrow">🎄 Christmas is in</span>
+        <span id="countdown-days" class="countdown-days">–</span>
+        <span id="countdown-clock" class="countdown-clock">–</span>
+        <span class="countdown-hint">Grown-ups: tap here to open the full list</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Passcode gate -->
+  <div id="lock" class="lock" hidden>
     <div class="lock-card">
+      <button id="lock-back" class="text-btn" type="button">‹ Back</button>
       <p class="lock-eyebrow">The 2026 List</p>
       <h1>What's the passcode?</h1>
       <p class="lock-sub">Same one the whole family uses — ask in the group chat if you forgot it.</p>
@@ -22,11 +56,11 @@
         <input id="pin-input" type="password" inputmode="numeric" placeholder="••••" maxlength="12" autofocus>
         <button type="submit">Open the list</button>
       </form>
-      <p id="lock-error" class="lock-error" hidden>That's not it — try again.</p>
+      <p id="lock-error" class="lock-error" hidden></p>
     </div>
   </div>
 
-  <!-- App -->
+  <!-- Authenticated app -->
   <div id="app" class="app" hidden>
     <header class="masthead">
       <div>
@@ -57,7 +91,11 @@
         <div id="rows" class="rows"></div>
 
         <form id="add-form" class="add-row" autocomplete="off">
-          <input id="add-item" type="text" placeholder="Add something to the list…" required>
+          <div class="add-row-fields">
+            <input id="add-item" type="text" placeholder="Add something to the list…" required>
+            <input id="add-link" type="url" placeholder="Link (optional)">
+            <input id="add-notes" type="text" placeholder="Notes (optional)">
+          </div>
           <button type="submit">Add</button>
         </form>
       </main>
@@ -70,7 +108,15 @@
       <div class="row-main">
         <input type="text" class="row-item" placeholder="Item">
         <div class="row-meta">
-          <input type="text" class="row-purchaser" list="purchaser-suggestions" placeholder="Who's getting it? (name, or leave blank)">
+          <select class="row-purchaser">
+            <option value="">Who's getting it?</option>
+            <option value="Sharon">Sharon</option>
+            <option value="KJ">KJ</option>
+            <option value="Hollie">Hollie</option>
+            <option value="Jody">Jody</option>
+            <option value="Chris">Chris</option>
+            <option value="Jill">Jill</option>
+          </select>
           <select class="row-holiday">
             <option value="Either">Either</option>
             <option value="Christmas">Christmas</option>
@@ -78,13 +124,12 @@
           </select>
           <input type="url" class="row-link" placeholder="Link (optional)">
         </div>
+        <input type="text" class="row-notes" placeholder="Notes (size, color, etc.)">
       </div>
       <a class="row-open" target="_blank" rel="noopener" title="Open link">↗</a>
       <button class="row-delete" title="Remove item">×</button>
     </div>
   </template>
-
-  <datalist id="purchaser-suggestions"></datalist>
 
   <div id="toast" class="toast" hidden></div>
 

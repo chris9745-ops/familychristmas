@@ -5,31 +5,128 @@
   let state = { people: [] };
   let activePersonId = null;
   let activeFilter = 'all';
-  let saveTimer = null;
+  const saveTimers = {}; // debounce timers per-field, keyed by "personId:itemId:field"
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-
-  function uid() {
-    return Math.random().toString(36).slice(2, 9);
-  }
 
   function getPin() {
     return localStorage.getItem(PIN_KEY) || '';
   }
 
-  // ---------- Lock screen ----------
+  function showToast(text) {
+    const t = $('#toast');
+    t.textContent = text;
+    t.hidden = false;
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+
+  // ---------- Screens ----------
+  const landingEl = $('#landing');
   const lockEl = $('#lock');
   const appEl = $('#app');
-  const lockForm = $('#lock-form');
-  const pinInput = $('#pin-input');
-  const lockError = $('#lock-error');
 
-  lockForm.addEventListener('submit', async (e) => {
+  function showLanding() {
+    landingEl.hidden = false;
+    lockEl.hidden = true;
+    appEl.hidden = true;
+  }
+  function showLock() {
+    landingEl.hidden = true;
+    lockEl.hidden = false;
+    appEl.hidden = true;
+    $('#pin-input').focus();
+  }
+  async function showApp() {
+    landingEl.hidden = true;
+    lockEl.hidden = true;
+    appEl.hidden = false;
+    await loadFullData();
+  }
+
+  $('#countdown-widget').addEventListener('click', showLock);
+  $('#lock-back').addEventListener('click', showLanding);
+
+  // ---------- Countdown ----------
+  function updateCountdown() {
+    const now = new Date();
+    let target = new Date(now.getFullYear(), 11, 25, 0, 0, 0);
+    if (target <= now) target = new Date(now.getFullYear() + 1, 11, 25, 0, 0, 0);
+    const diff = target - now;
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    $('#countdown-days').textContent = `${days} day${days === 1 ? '' : 's'}`;
+    $('#countdown-clock').textContent =
+      `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ---------- Public quick-add ----------
+  async function populateQuickPersonList() {
+    try {
+      const res = await fetch(API);
+      const data = await res.json();
+      const select = $('#quick-person');
+      select.innerHTML = '';
+      data.people.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+      });
+    } catch (err) {
+      // Quick-add will just fail on submit if this didn't load; not fatal here.
+    }
+  }
+
+  $('#quickadd-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const candidate = pinInput.value.trim();
+    const msg = $('#quickadd-msg');
+    msg.hidden = true;
+    msg.classList.remove('is-error');
+
+    const personId = $('#quick-person').value;
+    const item = $('#quick-item').value.trim();
+    const link = $('#quick-link').value.trim();
+    const notes = $('#quick-notes').value.trim();
+    if (!personId || !item) return;
+
+    try {
+      const res = await fetch(`${API}?action=quickadd`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personId, item, link, notes })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        $('#quick-item').value = '';
+        $('#quick-link').value = '';
+        $('#quick-notes').value = '';
+        msg.textContent = 'Added! 🎁';
+        msg.hidden = false;
+      } else {
+        msg.textContent = data.error || "Couldn't add that — try again.";
+        msg.classList.add('is-error');
+        msg.hidden = false;
+      }
+    } catch (err) {
+      msg.textContent = "Couldn't reach the list — check your connection.";
+      msg.classList.add('is-error');
+      msg.hidden = false;
+    }
+  });
+
+  // ---------- Passcode ----------
+  $('#lock-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const candidate = $('#pin-input').value.trim();
     if (!candidate) return;
-    lockError.hidden = true;
+    const errorEl = $('#lock-error');
+    errorEl.hidden = true;
     try {
       const res = await fetch(`${API}?action=verify`, {
         method: 'POST',
@@ -39,14 +136,15 @@
       const data = await res.json();
       if (data.ok) {
         localStorage.setItem(PIN_KEY, candidate);
-        enterApp();
+        await showApp();
       } else {
-        lockError.hidden = false;
-        pinInput.select();
+        errorEl.textContent = "That's not it — try again.";
+        errorEl.hidden = false;
+        $('#pin-input').select();
       }
     } catch (err) {
-      lockError.textContent = "Couldn't reach the list — check your connection and try again.";
-      lockError.hidden = false;
+      errorEl.textContent = "Couldn't reach the list — check your connection and try again.";
+      errorEl.hidden = false;
     }
   });
 
@@ -55,54 +153,46 @@
     location.reload();
   });
 
-  async function enterApp() {
-    lockEl.hidden = true;
-    appEl.hidden = false;
-    await loadData();
+  // ---------- Authed API helper ----------
+  async function callApi(action, body) {
+    const res = await fetch(`${API}?action=${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Family-Pin': getPin() },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 401) {
+      showToast('Passcode expired — locking this device.');
+      setTimeout(() => {
+        localStorage.removeItem(PIN_KEY);
+        location.reload();
+      }, 1200);
+      throw new Error('unauthorized');
+    }
+    return res.json();
   }
 
-  // ---------- Data ----------
-  async function loadData() {
+  function debouncedSave(key, fn, delay = 500) {
+    clearTimeout(saveTimers[key]);
+    saveTimers[key] = setTimeout(fn, delay);
+  }
+
+  function flashSaved() {
+    $('#save-indicator').textContent = 'Saved';
+    clearTimeout(flashSaved._t);
+    flashSaved._t = setTimeout(() => { $('#save-indicator').textContent = ''; }, 1400);
+  }
+
+  // ---------- Full data (authenticated app) ----------
+  async function loadFullData() {
     const res = await fetch(API);
     state = await res.json();
     if (!activePersonId && state.people.length) activePersonId = state.people[0].id;
     renderTabs();
     renderSheet();
-    refreshPurchaserSuggestions();
   }
 
-  function scheduleSave() {
-    showSaveState('Saving…');
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveData, 500);
-  }
-
-  async function saveData() {
-    try {
-      const res = await fetch(API, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Family-Pin': getPin()
-        },
-        body: JSON.stringify(state)
-      });
-      if (res.status === 401) {
-        showSaveState('Passcode expired');
-        setTimeout(() => {
-          localStorage.removeItem(PIN_KEY);
-          location.reload();
-        }, 1200);
-        return;
-      }
-      showSaveState('Saved just now');
-    } catch (err) {
-      showSaveState("Couldn't save — check connection");
-    }
-  }
-
-  function showSaveState(text) {
-    $('#save-indicator').textContent = text;
+  function currentPerson() {
+    return state.people.find(p => p.id === activePersonId);
   }
 
   // ---------- Tabs ----------
@@ -117,6 +207,7 @@
       btn.addEventListener('click', () => {
         activePersonId = person.id;
         activeFilter = 'all';
+        $$('.filter-chip').forEach(c => c.classList.toggle('is-active', c.dataset.filter === 'all'));
         renderTabs();
         renderSheet();
       });
@@ -125,22 +216,22 @@
     const addBtn = document.createElement('button');
     addBtn.className = 'add-tab';
     addBtn.textContent = '+ Add a list';
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', async () => {
       const name = prompt("Whose list is this?");
       if (!name || !name.trim()) return;
-      const person = { id: uid(), name: name.trim(), items: [] };
-      state.people.push(person);
-      activePersonId = person.id;
-      activeFilter = 'all';
-      renderTabs();
-      renderSheet();
-      scheduleSave();
+      try {
+        const data = await callApi('addPerson', { name: name.trim() });
+        if (data.ok) {
+          state.people.push(data.person);
+          activePersonId = data.person.id;
+          activeFilter = 'all';
+          renderTabs();
+          renderSheet();
+          flashSaved();
+        }
+      } catch (err) { /* handled in callApi */ }
     });
     tabsEl.appendChild(addBtn);
-  }
-
-  function currentPerson() {
-    return state.people.find(p => p.id === activePersonId);
   }
 
   // ---------- Sheet ----------
@@ -178,35 +269,36 @@
       row.dataset.id = item.id;
       if (item.purchased) row.classList.add('is-done');
 
+      function patch(fields) {
+        Object.assign(item, fields);
+        const key = `${person.id}:${item.id}:${Object.keys(fields)[0]}`;
+        debouncedSave(key, async () => {
+          try {
+            await callApi('updateItem', { personId: person.id, itemId: item.id, patch: fields });
+            flashSaved();
+          } catch (err) { /* handled in callApi */ }
+        });
+      }
+
       const check = $('.row-check', node);
       check.checked = !!item.purchased;
       check.addEventListener('change', () => {
-        item.purchased = check.checked;
-        row.classList.toggle('is-done', item.purchased);
-        scheduleSave();
+        row.classList.toggle('is-done', check.checked);
+        patch({ purchased: check.checked });
+        renderTabs();
       });
 
       const itemInput = $('.row-item', node);
       itemInput.value = item.item || '';
-      itemInput.addEventListener('input', () => {
-        item.item = itemInput.value;
-        scheduleSave();
-      });
+      itemInput.addEventListener('input', () => patch({ item: itemInput.value }));
 
-      const purchaserInput = $('.row-purchaser', node);
-      purchaserInput.value = item.purchaser || '';
-      purchaserInput.addEventListener('input', () => {
-        item.purchaser = purchaserInput.value;
-        scheduleSave();
-      });
-      purchaserInput.addEventListener('change', refreshPurchaserSuggestions);
+      const purchaserSelect = $('.row-purchaser', node);
+      purchaserSelect.value = item.purchaser || '';
+      purchaserSelect.addEventListener('change', () => patch({ purchaser: purchaserSelect.value }));
 
       const holidaySelect = $('.row-holiday', node);
       holidaySelect.value = item.holiday || 'Either';
-      holidaySelect.addEventListener('change', () => {
-        item.holiday = holidaySelect.value;
-        scheduleSave();
-      });
+      holidaySelect.addEventListener('change', () => patch({ holiday: holidaySelect.value }));
 
       const linkInput = $('.row-link', node);
       linkInput.value = item.link || '';
@@ -223,33 +315,56 @@
       linkInput.addEventListener('input', () => {
         item.link = linkInput.value;
         syncLink();
-        scheduleSave();
+        patch({ link: linkInput.value });
       });
 
-      $('.row-delete', node).addEventListener('click', () => {
+      const notesInput = $('.row-notes', node);
+      notesInput.value = item.notes || '';
+      notesInput.addEventListener('input', () => patch({ notes: notesInput.value }));
+
+      $('.row-delete', node).addEventListener('click', async () => {
         if (!confirm(`Remove "${item.item || 'this item'}" from the list?`)) return;
-        person.items = person.items.filter(i => i.id !== item.id);
-        renderTabs();
-        renderRows(person);
-        scheduleSave();
+        try {
+          await callApi('deleteItem', { personId: person.id, itemId: item.id });
+          person.items = person.items.filter(i => i.id !== item.id);
+          renderTabs();
+          renderRows(person);
+          flashSaved();
+        } catch (err) { /* handled in callApi */ }
       });
 
       rowsEl.appendChild(node);
     });
   }
 
-  $('#add-form').addEventListener('submit', (e) => {
+  $('#add-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const person = currentPerson();
     if (!person) return;
-    const input = $('#add-item');
-    const text = input.value.trim();
+    const itemInput = $('#add-item');
+    const linkInput = $('#add-link');
+    const notesInput = $('#add-notes');
+    const text = itemInput.value.trim();
     if (!text) return;
-    person.items.push({ id: uid(), item: text, purchaser: '', purchased: false, holiday: 'Either', link: '' });
-    input.value = '';
-    renderTabs();
-    renderRows(person);
-    scheduleSave();
+    try {
+      const data = await callApi('addItem', {
+        personId: person.id,
+        item: text,
+        link: linkInput.value.trim(),
+        notes: notesInput.value.trim(),
+        purchaser: '',
+        holiday: 'Either'
+      });
+      if (data.ok) {
+        person.items.push(data.item);
+        itemInput.value = '';
+        linkInput.value = '';
+        notesInput.value = '';
+        renderTabs();
+        renderRows(person);
+        flashSaved();
+      }
+    } catch (err) { /* handled in callApi */ }
   });
 
   $$('.filter-chip').forEach(chip => {
@@ -260,28 +375,19 @@
     });
   });
 
-  $('#remove-person').addEventListener('click', () => {
+  $('#remove-person').addEventListener('click', async () => {
     const person = currentPerson();
     if (!person) return;
     if (!confirm(`Remove "${person.name}"'s whole list? This can't be undone.`)) return;
-    state.people = state.people.filter(p => p.id !== person.id);
-    activePersonId = state.people.length ? state.people[0].id : null;
-    renderTabs();
-    renderSheet();
-    scheduleSave();
+    try {
+      await callApi('removePerson', { personId: person.id });
+      state.people = state.people.filter(p => p.id !== person.id);
+      activePersonId = state.people.length ? state.people[0].id : null;
+      renderTabs();
+      renderSheet();
+      flashSaved();
+    } catch (err) { /* handled in callApi */ }
   });
-
-  function refreshPurchaserSuggestions() {
-    const names = new Set();
-    state.people.forEach(p => p.items.forEach(i => { if (i.purchaser) names.add(i.purchaser.trim()); }));
-    const dl = $('#purchaser-suggestions');
-    dl.innerHTML = '';
-    Array.from(names).sort().forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      dl.appendChild(opt);
-    });
-  }
 
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -289,6 +395,9 @@
 
   // ---------- Boot ----------
   if (getPin()) {
-    enterApp();
+    showApp();
+  } else {
+    showLanding();
+    populateQuickPersonList();
   }
 })();
