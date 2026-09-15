@@ -45,6 +45,9 @@ body{
   justify-content:center;
   padding: 24px;
 }
+.lock[hidden]{
+  display: none;
+}
 .lock-card{
   max-width: 380px;
   width:100%;
